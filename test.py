@@ -57,8 +57,20 @@ data,label = read_img(path)
 #plt.imshow(data[1], cmap='gray')
 #plt.imshow(data[2], cmap='gray')
 print(label)
-x = tf.placeholder(tf.float32,shape=[3,w,h,c],name='x')
-y_ = tf.placeholder(tf.int32,shape=[3,],name='y_')
+
+
+num_example = data.shape[0]
+ratio = 0.8
+num_train = int(ratio * num_example)
+s = np.int(num_train)
+x_train = data[:s]
+y_train = label[:s]
+x_val = data[s:]
+y_val = label[s:]
+
+
+x = tf.placeholder(tf.float32,shape=[num_train,w,h,c],name='x')
+y_ = tf.placeholder(tf.int32,shape=[num_train,],name='y_')
 
 w_convX1 = weight_variable(shape=[2, 2, 3, 9])
 b_convX1 = bias_variable(shape=[9])
@@ -106,14 +118,14 @@ fc2_biases = tf.get_variable("bias1", [2], initializer=tf.constant_initializer(0
 logit = tf.matmul(fc1, fc2_weights) + fc2_biases
 #print(logit)
 print(logit)
-print(y_)
+#print(y_)
 Loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logit, labels=y_)
-train_op=tf.train.AdamOptimizer(learning_rate=0.001).minimize(Loss)
+train_op = tf.train.AdamOptimizer(learning_rate=0.001).minimize(Loss)
 initialized_variables = tf.initialize_all_variables()
 sess = tf.Session()
 sess.run(fetches=initialized_variables)
-saver=tf.train.Saver()
-#saver.restore(sess,"/xiaoqiang/model/1.ckpt")
+saver = tf.train.Saver()
+#saver.restore(sess,"/defectDetecting/model/1.ckpt")
 for times in range(5):
     for iter in range(1):
         # batch = dataset.train.next_batch(batch_size=batch_size)
@@ -122,13 +134,13 @@ for times in range(5):
         # print('Iter num %d ,the train accuracy is %.3f' % (iter+1, Accuracy))
         a = 0
         for i in range(1200):
-            sess.run(fetches=train_op, feed_dict={x: data.reshape((3, 1024, 1024, 3)),
-                                                    y_: label})
+            sess.run(fetches=train_op, feed_dict={x: x_train.reshape((num_train, 1024, 1024, 3)),
+                                                    y_: y_train})
 
-            a = sess.run(fetches=logit, feed_dict={x: data.reshape((3, 1024, 1024, 3)),
-                                                    y_: label})
+            a = sess.run(fetches=logit, feed_dict={x: x_train.reshape((num_train, 1024, 1024, 3)),
+                                                    y_: y_train})
             a = a.tolist()
             print(iter + 1, a)
             print(a[0])
             print(a[0].index(max(a[0])))
-        save_path = saver.save(sess, "/xiaoqiang/model/" + str(times + 1) + ".ckpt")
+        save_path = saver.save(sess, "/defectDetecting/model/" + str(times + 1) + ".ckpt")
