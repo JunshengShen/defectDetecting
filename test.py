@@ -69,8 +69,9 @@ x_val = data[s:]
 y_val = label[s:]
 
 
-x = tf.placeholder(tf.float32,shape=[num_train,w,h,c],name='x')
-y_ = tf.placeholder(tf.int32,shape=[num_train,],name='y_')
+
+x = tf.placeholder(tf.float32,shape=[None,w,h,c],name='x')
+y_ = tf.placeholder(tf.int32,shape=[None,],name='y_')
 
 w_convX1 = weight_variable(shape=[2, 2, 3, 9])
 b_convX1 = bias_variable(shape=[9])
@@ -117,7 +118,7 @@ tf.add_to_collection('losses', regularizer(fc2_weights))
 fc2_biases = tf.get_variable("bias1", [2], initializer=tf.constant_initializer(0.1))
 logit = tf.matmul(fc1, fc2_weights) + fc2_biases
 #print(logit)
-print(logit)
+#print(logit)
 #print(y_)
 Loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logit, labels=y_)
 train_op = tf.train.AdamOptimizer(learning_rate=0.001).minimize(Loss)
@@ -127,20 +128,16 @@ sess.run(fetches=initialized_variables)
 saver = tf.train.Saver()
 #saver.restore(sess,"/defectDetecting/model/1.ckpt")
 for times in range(5):
-    for iter in range(1):
-        # batch = dataset.train.next_batch(batch_size=batch_size)
-        # sess.run(fetches=Step_train, feed_dict={x:batch[0], y:batch[1], dropout_prob:0.5})
-        # Accuracy = sess.run(fetches=accuracy, feed_dict={x:batch[0], y:batch[1], dropout_prob:1})
-        # print('Iter num %d ,the train accuracy is %.3f' % (iter+1, Accuracy))
-        a = 0
-        for i in range(1200):
-            sess.run(fetches=train_op, feed_dict={x: x_train.reshape((num_train, 1024, 1024, 3)),
+    for iter in range(5):
+
+
+        sess.run(fetches=train_op, feed_dict={x: x_train.reshape((num_train, 1024, 1024, 3)),
                                                     y_: y_train})
 
-            a = sess.run(fetches=logit, feed_dict={x: x_train.reshape((num_train, 1024, 1024, 3)),
-                                                    y_: y_train})
-            a = a.tolist()
-            print(iter + 1, a)
-            print(a[0])
-            print(a[0].index(max(a[0])))
-        save_path = saver.save(sess, "/defectDetecting/model/" + str(times + 1) + ".ckpt")
+    result = sess.run(fetches=logit, feed_dict={x: x_val.reshape((num_example-num_train, 1024, 1024, 3)),
+                                                y_: y_val})
+    result = result.tolist()
+    print(iter + 1, result)
+    print(result[0])
+    print(result[0].index(max(result[0])))
+    save_path = saver.save(sess, "/defectDetecting/model/" + str(times + 1) + ".ckpt")
